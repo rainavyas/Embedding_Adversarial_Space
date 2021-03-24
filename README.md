@@ -15,3 +15,5 @@ pip install transformers
 pip install scandir
 
 pip install sentencepiece
+
+pip install matplotlib
