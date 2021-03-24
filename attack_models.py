@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 from models import ElectraSequenceClassifier, BertSequenceClassifier, RobertaSequenceClassifier, XlnetSequenceClassifier
 
-class Attack_Embedding():
+class Attack_handler():
     '''
     Structure that perturbs encoded sentence embedding in attack direction
     '''
     def __init__(self, model, name):
-        self.model = model.eval()
+        model.eval()
+        self.model = model
         self.name = name # e.g. electra
 
     def attack(self, input_ids, attention_mask, attack_direction):
@@ -17,9 +18,7 @@ class Attack_Embedding():
             raise Exception("Model type not yet supported")
 
     def _electra_attack(self, input_ids, attention_mask, attack_direction):
-        all_layers_hidden_states = self.model.electra(input_ids, attention_mask)
-        final_layer = all_layers_hidden_states[0]
-        sentence_embedding = final_layer[:,0,:]
+        sentence_embedding = self._electra_sentence_embedding(input_ids, attention_mask)
 
         # Attack embeddings
         attacked_embedding = sentence_embedding + attack_direction
@@ -32,3 +31,18 @@ class Attack_Embedding():
         x = self.model.classifier.dropout(x)
         logits = self.model.classifier.out_proj(x)
         return logits
+
+    def _electra_sentence_embedding(self, input_ids, attention_mask):
+        all_layers_hidden_states = self.model.electra(input_ids, attention_mask)
+        final_layer = all_layers_hidden_states[0]
+        sentence_embedding = final_layer[:,0,:]
+        return sentence_embedding
+
+    def get_sentence_embedding(self, input_ids, attention_mask):
+        '''
+        Public method to get output of the encoding stage
+        '''
+        if self.name == 'electra':
+            return self._electra_sentence_embedding(input_ids, attention_mask)
+        else:
+            raise Exception("Model type not yet supported")
