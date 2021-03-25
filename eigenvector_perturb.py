@@ -118,7 +118,7 @@ if __name__ == "__main__":
     e,v = get_e_v(cov)
 
     # Get the ranks, eigenvalues and fooling rates
-    rank, fool, eig = get_r_f_e(dl, model, attack_handler, e, v, stepsize, epsilon)
+    rank, fool, eig = get_r_f_e(dl, model, attack_handler, e, v, stepsize, epsilon, device)
 
     # Plot fooling rate against rank
     plt.plot(rank, fool)
