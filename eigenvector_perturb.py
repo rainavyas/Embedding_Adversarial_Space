@@ -12,7 +12,7 @@ from data_prep import get_test
 from pca_tools import get_covariance_matrix, get_e_v
 import matplotlib.pyplot as plt
 
-def load_model(arch, model_path):
+def load_model(arch, model_path, device):
     if arch == 'electra':
         model = ElectraSequenceClassifier()
     elif arch == 'bert':
@@ -36,7 +36,8 @@ def get_embedding_X(dataloader, attack_handler, device):
         id = id.to(device)
         mask = mask.to(device)
 
-        curr_X = attack_handler.get_sentence_embedding(id, mask)
+        with torch.no_grad():
+            curr_X = attack_handler.get_sentence_embedding(id, mask)
         curr_X = curr_X.cpu()
         Xs.append(curr_X)
 
@@ -68,9 +69,10 @@ def get_r_f_e(dataloader, model, attack_handler, e, v, stepsize, epsilon, device
             id = id.to(device)
             mask = mask.to(device)
 
-            original_logits = model(id, mask)
-            attacked_logits = attack_handler.attack(id, mask, attack)
-            curr_fool = fooling_rate(original_logits, attacked_logits)
+            with torch.no_grad():
+                original_logits = model(id, mask)
+                attacked_logits = attack_handler.attack(id, mask, attack)
+                curr_fool = fooling_rate(original_logits, attacked_logits)
             fool.update(curr_fool.item(), id.size(0))
         fools.append(fool.avg)
     return ranks, fools, eigenvalues
@@ -107,8 +109,7 @@ if __name__ == "__main__":
     dl = DataLoader(ds, batch_size=batch_size)
 
     # Load the trained model
-    model = load_model(arch, model_path)
-    model.to(device)
+    model = load_model(arch, model_path, device)
 
     # Initialise the attack handler
     attack_handler = Attack_handler(model, arch)
