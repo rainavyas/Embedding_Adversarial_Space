@@ -37,7 +37,7 @@ def get_embedding_X(dataloader, attack_handler, device):
         mask = mask.to(device)
 
         curr_X = attack_handler.get_sentence_embedding(id, mask)
-        curr_X = curr_X.to('cpu')
+        curr_X = curr_X.cpu()
         Xs.append(curr_X)
 
     X = torch.cat(Xs)
