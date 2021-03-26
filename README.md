@@ -17,3 +17,5 @@ pip install scandir
 pip install sentencepiece
 
 pip install matplotlib
+
+pip install numpy
