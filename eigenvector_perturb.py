@@ -142,5 +142,5 @@ if __name__ == "__main__":
     plt.xlabel("Eigenvalue Rank")
     plt.ylabel("Eigenvalue")
     plt.title("Embedding space of "+arch)
-    plt.savefig("fool_vs_rank_"+arch+".png")
+    plt.savefig("eig_vs_rank_"+arch+".png")
     plt.clf()
