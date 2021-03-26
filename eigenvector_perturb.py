@@ -54,7 +54,7 @@ def get_r_f_e(dataloader, model, attack_handler, e, v, stepsize, epsilon, device
     fools = []
     eigenvalues = []
 
-    for i in range(e.size(0), stepsize):
+    for i in range(0, e.size(0), stepsize):
         ranks.append(i)
         eigenvalues.append(e[i])
         attack_direction = v[i]
