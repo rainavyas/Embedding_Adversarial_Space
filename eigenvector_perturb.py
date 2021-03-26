@@ -5,7 +5,7 @@ from torch.utils.data import DataLoader
 import sys
 import os
 import argparse
-from tools import AverageMeter, accuracy_topk, get_default_device, fooling_rate
+from tools import AverageMeter, accuracy_topk, get_default_device, fooling_rate, kl_avg
 from models import ElectraSequenceClassifier, BertSequenceClassifier, RobertaSequenceClassifier, XlnetSequenceClassifier
 from attack_models import Attack_handler
 from data_prep import get_test
@@ -51,10 +51,11 @@ def get_embedding_cov(dataloader, attack_handler, device):
     cov = get_covariance_matrix(X)
     return cov
 
-def get_r_f_e(dataloader, model, attack_handler, e, v, stepsize, epsilon, device):
+def get_r_f_e_kl(dataloader, model, attack_handler, e, v, stepsize, epsilon, device):
     ranks = []
     fools = []
     eigenvalues = []
+    kls = []
 
     for i in range(0, e.size(0), stepsize):
         ranks.append(i)
@@ -66,6 +67,7 @@ def get_r_f_e(dataloader, model, attack_handler, e, v, stepsize, epsilon, device
         attack = attack.to(device)
 
         fool = AverageMeter()
+        kl = AverageMeter()
 
         for id, mask, target in dataloader:
             id = id.to(device)
@@ -75,9 +77,12 @@ def get_r_f_e(dataloader, model, attack_handler, e, v, stepsize, epsilon, device
                 original_logits = model(id, mask)
                 attacked_logits = attack_handler.attack(id, mask, attack)
                 curr_fool = fooling_rate(original_logits, attacked_logits)
+                curr_kl = kl_avg(original_logits, attacked_logits)
             fool.update(curr_fool.item(), id.size(0))
+            kl.update(curr_kl.item(), id.size(0))
         fools.append(fool.avg)
-    return ranks, fools, eigenvalues
+        kls.append(kl.avg)
+    return ranks, fools, eigenvalues, kls
 
 if __name__ == "__main__":
 
@@ -126,7 +131,7 @@ if __name__ == "__main__":
     e,v = get_e_v(cov)
 
     # Get the ranks, eigenvalues and fooling rates
-    rank, fool, eig = get_r_f_e(dl, model, attack_handler, e, v, stepsize, epsilon, device)
+    rank, fool, eig, kl = get_r_f_e(dl, model, attack_handler, e, v, stepsize, epsilon, device)
 
     # Plot fooling rate against rank
     plt.plot(rank, fool)
@@ -143,4 +148,12 @@ if __name__ == "__main__":
     plt.ylabel("Eigenvalue")
     plt.title("Embedding space of "+arch)
     plt.savefig("eig_vs_rank_"+arch+".png")
+    plt.clf()
+
+    # Plot kl against rank
+    plt.plot(rank, kl)
+    plt.xlabel("Eigenvalue Rank")
+    plt.ylabel("KL Divergence")
+    plt.title("Perturbation in embedding space of "+arch)
+    plt.savefig("kl_vs_rank_"+arch+".png")
     plt.clf()

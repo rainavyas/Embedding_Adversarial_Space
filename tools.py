@@ -25,7 +25,7 @@ def accuracy_topk(output, target, k=1):
 def fooling_rate(output_original, output_attacked):
     class_original = torch.argmax(output_original, dim=1)
     acc = accuracy_topk(output_attacked.data, class_original.data, k=1)
-    fool = 100 - acc 
+    fool = 100 - acc
     return fool
 
 class AverageMeter(object):
@@ -44,3 +44,10 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
+def kl_avg(logits1, logits2):
+  sf = torch.nn.Softmax(dim=1)
+  pmf1 = sf(logits1)
+  pmf2 = torch.log(sf(logits2)) # log for kl div function
+  kl_mean = torch.nn.functional.kl_div(logits1, logits2, reduction='batchmean')
+  return kl_mean
