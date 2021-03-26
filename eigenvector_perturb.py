@@ -98,6 +98,8 @@ if __name__ == "__main__":
     epsilon = args.epsilon
     subset_size = args.S
 
+    np.random.seed(0)
+
     # Save the command run
     if not os.path.isdir('CMDs'):
         os.mkdir('CMDs')
