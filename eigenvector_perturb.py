@@ -11,6 +11,8 @@ from attack_models import Attack_handler
 from data_prep import get_test
 from pca_tools import get_covariance_matrix, get_e_v
 import matplotlib.pyplot as plt
+import numpy as np
+from torch.utils.data import Subset
 
 def load_model(arch, model_path, device):
     if arch == 'electra':
@@ -84,8 +86,9 @@ if __name__ == "__main__":
     commandLineParser.add_argument('MODEL', type=str, help="trained model path")
     commandLineParser.add_argument('ARCH', type=str, help='electra, bert, roberta, xlnet')
     commandLineParser.add_argument('--stepsize', type=int, default=20, help="Plot stepsize")
-    commandLineParser.add_argument('--B', type=int, default=8, help="Specify batch size")
+    commandLineParser.add_argument('--B', type=int, default=16, help="Specify batch size")
     commandLineParser.add_argument('--epsilon', type=float, default=0.1, help='Attack size l-inf norm')
+    commandLineParser.add_argument('--S', type=int, default=5000, help='Subset size')
 
     args = commandLineParser.parse_args()
     model_path = args.MODEL
@@ -93,6 +96,7 @@ if __name__ == "__main__":
     stepsize = args.stepsize
     batch_size = args.B
     epsilon = args.epsilon
+    subset_size = args.S
 
     # Save the command run
     if not os.path.isdir('CMDs'):
@@ -103,9 +107,10 @@ if __name__ == "__main__":
     # Get the device
     device = get_default_device()
 
-    # Load the test data
+    # Load the test data - keep only subset
     input_ids, mask, labels = get_test(arch)
-    ds = TensorDataset(input_ids, mask, labels)
+    indices = torch.from_numpy(np.random.choice(input_ids.size(0), size=subset_size, replace=False))
+    ds = Subset(TensorDataset(input_ids, mask, labels), indices)
     dl = DataLoader(ds, batch_size=batch_size)
 
     # Load the trained model
