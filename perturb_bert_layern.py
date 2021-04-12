@@ -10,12 +10,11 @@ import torch
 import torch.nn as nn
 from torch.utils.data import TensorDataset
 from torch.utils.data import DataLoader
-from data_prep import get_data
+from data_prep import get_train, get_test
 import sys
 import os
 import argparse
-from models import BERTGrader
-from tools import AverageMeter
+from models import BertSequenceClassifier
 from pca_tools import get_covariance_matrix, get_e_v
 import matplotlib.pyplot as plt
 from tools import fooling_rate
@@ -84,7 +83,7 @@ if __name__ == '__main__':
         f.write(' '.join(sys.argv)+'\n')
 
     # Load the model
-    model = BERTGrader()
+    model = BertSequenceClassifier()
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
