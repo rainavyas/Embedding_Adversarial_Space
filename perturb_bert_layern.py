@@ -99,9 +99,10 @@ if __name__ == '__main__':
     input_ids, mask, _ = get_train('bert', base_dir)
     input_ids = input_ids[:num_points]
     mask = mask[:num_points]
-    hidden_states = handler.get_layern_outputs(input_ids, mask)
-    cov = get_covariance_matrix(hidden_states[:,token_pos,:])
-    e, v = get_e_v(cov)
+    with torch.no_grad():
+        hidden_states = handler.get_layern_outputs(input_ids, mask)
+        cov = get_covariance_matrix(hidden_states[:,token_pos,:])
+        e, v = get_e_v(cov)
 
     # Get test data
     input_ids, mask, labels = get_test('bert', base_dir)
