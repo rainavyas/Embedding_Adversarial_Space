@@ -64,6 +64,7 @@ if __name__ == '__main__':
     # Get command line arguments
     commandLineParser = argparse.ArgumentParser()
     commandLineParser.add_argument('MODEL', type=str, help='trained .th model')
+    commandLineParser.add_argument('DIR', type=str, help='data base directory')
     commandLineParser.add_argument('--epsilon', type=float, default=0.1, help='l-inf perturbation size')
     commandLineParser.add_argument('--token_pos', type=int, default=0, help="token position to perturb")
     commandLineParser.add_argument('--layer_num', type=int, default=1, help="BERT layer to perturb")
@@ -71,6 +72,7 @@ if __name__ == '__main__':
 
     args = commandLineParser.parse_args()
     model_path = args.MODEL
+    base_dir = args.DIR
     epsilon = args.epsilon
     token_pos = args.token_pos
     layer_num = args.layer_num
@@ -91,13 +93,13 @@ if __name__ == '__main__':
     handler = Bert_Handler(model, layer_num=layer_num)
 
     # Use training data to get eigenvector basis
-    input_ids, mask, _ = get_train('bert')
+    input_ids, mask, _ = get_train('bert', base_dir)
     hidden_states = handler.get_layern_outputs(input_ids, mask)
     cov = get_covariance_matrix(hidden_states[:,token_pos,:])
     e, v = get_e_v(cov)
 
     # Get test data
-    input_ids, mask, labels = get_test('bert')
+    input_ids, mask, labels = get_test('bert', base_dir)
 
     # Perturb in each eigenvector direction vs rank
     ranks, fools = get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon, stepsize=stepsize, token_pos=token_pos)
