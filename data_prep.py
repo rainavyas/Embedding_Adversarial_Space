@@ -76,10 +76,12 @@ def get_data(base_dir, arch):
 
     return ids, mask, labels
 
-def get_train(arch):
-    base_dir = '../data/train'
+def get_train(arch, base_dir=None):
+    if base_dir == None:
+        base_dir = '../data/train'
     return get_data(base_dir, arch)
 
-def get_test(arch):
-    base_dir = '../data/test'
+def get_test(arch, base_dir=None):
+    if base_dir == None:
+        base_dir = '../data/test'
     return get_data(base_dir, arch)
