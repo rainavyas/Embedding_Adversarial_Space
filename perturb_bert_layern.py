@@ -69,6 +69,8 @@ if __name__ == '__main__':
     commandLineParser.add_argument('--token_pos', type=int, default=0, help="token position to perturb")
     commandLineParser.add_argument('--layer_num', type=int, default=1, help="BERT layer to perturb")
     commandLineParser.add_argument('--stepsize', type=int, default=1, help="ranks step size for plot")
+    commandLineParser.add_argument('--num_points', type=int, default=25000, help="number of data points to use")
+
 
     args = commandLineParser.parse_args()
     model_path = args.MODEL
@@ -77,6 +79,7 @@ if __name__ == '__main__':
     token_pos = args.token_pos
     layer_num = args.layer_num
     stepsize = args.stepsize
+    num_points = args.num_points
 
     # Save the command run
     if not os.path.isdir('CMDs'):
@@ -94,12 +97,17 @@ if __name__ == '__main__':
 
     # Use training data to get eigenvector basis
     input_ids, mask, _ = get_train('bert', base_dir)
+    input_ids = input_ids[:num_points]
+    mask = mask[:num_points]
     hidden_states = handler.get_layern_outputs(input_ids, mask)
     cov = get_covariance_matrix(hidden_states[:,token_pos,:])
     e, v = get_e_v(cov)
 
     # Get test data
     input_ids, mask, labels = get_test('bert', base_dir)
+    input_ids = input_ids[:num_points]
+    mask = mask[:num_points]
+    labels = labels[:num_points]
 
     # Perturb in each eigenvector direction vs rank
     ranks, fools = get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon, stepsize=stepsize, token_pos=token_pos)
