@@ -20,10 +20,10 @@ class Bert_Handler():
         '''
         # Need to extend mask for encoder - from HuggingFace implementation
         self.input_shape = input_ids.size()
-        extended_attention_mask: torch.Tensor = self.model.encoder.get_extended_attention_mask(attention_mask, self.input_shape, device)
+        extended_attention_mask: torch.Tensor = self.model.bert.get_extended_attention_mask(attention_mask, self.input_shape, device)
 
-        hidden_states = self.model.encoder.embeddings(input_ids=input_ids)
-        for layer_module in self.model.encoder.encoder.layer[:self.layer_num]:
+        hidden_states = self.model.bert.embeddings(input_ids=input_ids)
+        for layer_module in self.model.bert.encoder.layer[:self.layer_num]:
             layer_outputs = layer_module(hidden_states, extended_attention_mask)
             hidden_states = layer_outputs[0]
         return hidden_states
@@ -33,12 +33,12 @@ class Bert_Handler():
         Pass hidden states through remainder of BertGrader model
         after nth layer
         '''
-        extended_attention_mask: torch.Tensor = self.model.encoder.get_extended_attention_mask(attention_mask, self.input_shape, device)
+        extended_attention_mask: torch.Tensor = self.model.bert.get_extended_attention_mask(attention_mask, self.input_shape, device)
 
-        for layer_module in self.model.encoder.encoder.layer[self.layer_num:]:
+        for layer_module in self.model.bert.encoder.layer[self.layer_num:]:
             layer_outputs = layer_module(hidden_states, extended_attention_mask)
             hidden_states = layer_outputs[0]
 
-        sentence_embedding = self.model.encoder.pooler(hidden_states)
+        sentence_embedding = self.model.bert.pooler(hidden_states)
         logits = self.model.classifier(sentence_embedding)
         return logits
