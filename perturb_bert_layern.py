@@ -41,7 +41,7 @@ def get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon,
         ranks.append(i)
         curr_v = v[i]
         fool = AverageMeter()
-        with torch.no_data():
+        with torch.no_grad():
             for id, m, lab in dl:
                 original_logits = model(id, m)
                 attack, _ = make_attack(curr_v, epsilon)
