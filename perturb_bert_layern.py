@@ -17,7 +17,7 @@ import argparse
 from models import BertSequenceClassifier
 from pca_tools import get_covariance_matrix, get_e_v
 import matplotlib.pyplot as plt
-from tools import fooling_rate, AverageMeter
+from tools import fooling_rate, AverageMeter, kl_avg
 from layer_handler import Bert_Handler
 
 
@@ -30,6 +30,7 @@ def make_attack(vec, epsilon):
 def get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon, stepsize=1, token_pos=0, batch_size=32):
     ranks  = []
     fools = []
+    kls = []
 
     # batch the data
     ds = TensorDataset(input_ids, mask, labels)
@@ -41,6 +42,7 @@ def get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon,
         ranks.append(i)
         curr_v = v[i]
         fool = AverageMeter()
+        kl = AverageMeter()
         with torch.no_grad():
             for id, m, lab in dl:
                 original_logits = model(id, m)
@@ -51,9 +53,12 @@ def get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon,
                 # Pass through rest of model
                 attacked_logits = handler.pass_through_rest(layer_embeddings, m)
                 curr_fool = fooling_rate(original_logits, attacked_logits)
+                curr_kl = kl_avg(original_logits, attacked_logits)
                 fool.update(curr_fool.item(), id.size(0))
+                kl.update(curr_kl.item(), id.size(0))
         fools.append(fool.avg)
-    return ranks, fools
+        kls.append(kl.avg)
+    return ranks, fools, kls
 
 def plot_data_vs_rank(ranks, data, yname, filename):
 
@@ -119,9 +124,13 @@ if __name__ == '__main__':
     labels = labels[:num_points_test]
 
     # Perturb in each eigenvector direction vs rank
-    ranks, fools = get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon, stepsize=stepsize, token_pos=token_pos, batch_size=batch_size)
+    ranks, fools, kls = get_perturbation_impact(handler, v, input_ids, mask, labels, model, epsilon, stepsize=stepsize, token_pos=token_pos, batch_size=batch_size)
 
     # Plot the data
     filename = 'fools_eigenvector_perturb_layer'+str(layer_num)+'_tokenpos'+str(token_pos)+'_epsilon'+str(epsilon)+'.png'
     yname = 'Fooling Rate'
     plot_data_vs_rank(ranks, fools, yname, filename)
+
+    filename = 'kls_eigenvector_perturb_layer'+str(layer_num)+'_tokenpos'+str(token_pos)+'_epsilon'+str(epsilon)+'.png'
+    yname = 'KL Divergence'
+    plot_data_vs_rank(ranks, kls, yname, filename)
