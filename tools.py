@@ -49,5 +49,5 @@ def kl_avg(logits1, logits2):
   sf = torch.nn.Softmax(dim=1)
   pmf1 = sf(logits1)
   pmf2 = torch.log(sf(logits2)) # log for kl div function
-  kl_mean = torch.nn.functional.kl_div(logits1, logits2, reduction='batchmean')
+  kl_mean = torch.nn.functional.kl_div(pmf2, pmf1, reduction='batchmean')
   return kl_mean
